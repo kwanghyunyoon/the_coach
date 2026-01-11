@@ -642,30 +642,44 @@
             });
         }
 
-        function selectScenario(id) {
-            currentScenario = scenarios.find(s => s.id === id);
-            messages = [];
-            isWaiting = false;
+       function selectScenario(id) {
+  currentScenario = scenarios.find(s => s.id === id);
+  isWaiting = false;
 
-            document.getElementById("contextTitle").textContent = currentScenario.title;
-            document.getElementById("contextText").textContent = currentScenario.context + "\n\n📝 " + currentScenario.prompt;
-            document.getElementById("scenarioContext").style.display = "block";
-            document.getElementById("userInput").disabled = false;
-            document.getElementById("sendBtn").disabled = false;
-            document.getElementById("feedbackBox").classList.remove("show");
+  messages = [
+    {
+      role: "system",
+      content: `You are a friendly but honest charisma coach.
+Stay in dialogue. Ask follow-up questions.
+Do NOT give final summaries unless the user asks.`
+    },
+    {
+      role: "assistant",
+      content: `Alright, here’s the situation:
 
-            renderScenarios();
+${currentScenario.context}
 
-            const chatMessages = document.getElementById("chatMessages");
-            chatMessages.innerHTML = `
-                <div class="message assistant">
-                    <div class="message-bubble">
-                        Let's practice this scenario! Here's the situation: ${currentScenario.context} 
-                        
-                        ${currentScenario.prompt}
+${currentScenario.prompt}`
+    }
+  ];
+
+  document.getElementById("contextTitle").textContent = currentScenario.title;
+  document.getElementById("contextText").textContent =
+    currentScenario.context + "\n\n📝 " + currentScenario.prompt;
+
+  document.getElementById("scenarioContext").style.display = "block";
+  document.getElementById("userInput").disabled = false;
+  document.getElementById("sendBtn").disabled = false;
+  document.getElementById("feedbackBox").classList.remove("show");
+
+  renderScenarios();
+  renderMessages();
+  document.getElementById("userInput").focus();
+}
+
                     </div>
                 </div>
-            `;
+            
 
             document.getElementById("userInput").focus();
         }
