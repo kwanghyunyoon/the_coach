@@ -827,14 +827,7 @@ Be encouraging and specific.`
                 const count = byCategory[cat] || 0;
                 const max = 3;
                 const percent = Math.min((count / max) * 100, 100);
-                return `
-                    <div class="progress-item">
-                        <div class="progress-label">${cat.split("-").map(w => w[0].toUpperCase() + w.slice(1)).join(" ")} (${count}/${max})</div>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: ${percent}%"></div>
-                        </div>
-                    </div>
-                `;
+                return 
             }).join("");
             
             document.getElementById("categoryProgress").innerHTML = progressHTML;
