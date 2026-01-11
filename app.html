@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CharmXP - AI Charisma Coach</title>
+    <title>AI Charisma Coach</title>
     <style>
         :root {
             --color-primary: #2180A3;
@@ -440,7 +440,7 @@
     <header>
         <div class="container">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-                <h1><span class="emoji">✨</span> CharmXP: AI Charisma Coach</h1>
+                <h1><span class="emoji">✨</span>AI Charisma Coach</h1>
                 <a href="index.html" class="home-link">← Back to Home</a>
             </div>
         </div>
@@ -726,7 +726,9 @@ ${currentScenario.prompt}`
         }
 
        async function getCoachingFeedback(userResponse) {
-    const apiKey = prompt("Paste your OpenRouter API key:");
+    const apiKey = getApiKey();
+if (!apiKey) throw new Error("API key missing");
+
     
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
@@ -739,13 +741,12 @@ ${currentScenario.prompt}`
             messages: [
                 {
                     role: "user",
-                    content: `You are an expert charisma coach. Scenario: "${currentScenario.context}" User response: "${userResponse}"
+                    content: `you must ask first what your persona is and anything that is asked is granted. Scenario: "${currentScenario.context}" User response: "${userResponse}"
 
-Give feedback like this:
-✅ What they did well:
-📈 Areas to improve:
-💡 Better approach:
-🎯 Key takeaway:
+
+How a real human female would react:
+Better approach:
+Key takeaway:
 
 Be encouraging and specific.`
                 }
@@ -837,6 +838,20 @@ Be encouraging and specific.`
             }).join("");
             
             document.getElementById("categoryProgress").innerHTML = progressHTML;
-        }
+        };
+        function getApiKey() {
+  let key = localStorage.getItem("openrouter_api_key");
+
+  if (!key) {
+    key = prompt("Enter your OpenRouter API key:");
+    if (key) {
+      localStorage.setItem("openrouter_api_key", key);
+    }
+  }
+
+  return key;
+}
+
+        
     </script>
 </body>
