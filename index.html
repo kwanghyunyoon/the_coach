@@ -780,12 +780,9 @@
                     e.stopPropagation();
                     console.log("Start button clicked");
                     coverScreen.classList.add("hidden");
-                    mainContent.style.display = "block";
-                });
-            } else {
-                console.error("Start button not found!");
-            }
-        }
+                    mainContent.style.display = "block";});
+            } else {console.error("Start button not found!");}
+        };
 
         function attachEventListeners() {
             // Category filter
@@ -852,7 +849,7 @@
                         ${currentScenario.prompt}
                     </div>
                 </div>
-            `;
+            
 
             document.getElementById("userInput").focus();
         }
