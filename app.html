@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CharmXP - AI Charisma Coach</title>
+    <style>
+        :root {
+            --color-primary: #2180A3;
+            --color-primary-hover: #1a6683;
+            --color-secondary: #E6935D;
+            --color-success: #4CAF50;
+            --color-background: #F5F7FA;
+            --color-surface: #FFFFFF;
+            --color-text: #1F2937;
+            --color-text-secondary: #6B7280;
+            --color-border: #E5E7EB;
+            --space-xs: 8px;
+            --space-sm: 12px;
+            --space-md: 16px;
+            --space-lg: 24px;
+            --space-xl: 32px;
+            --radius-sm: 6px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+            --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background-color: var(--color-background);
+            color: var(--color-text);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 var(--space-md);
+        }
+
+        /* Header */
+        header {
+            background: linear-gradient(135deg, var(--color-primary) 0%, #1a6683 100%);
+            color: white;
+            padding: var(--space-lg) 0;
+            box-shadow: var(--shadow-md);
+            margin-bottom: var(--space-lg);
+        }
+
+        header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+        }
+
+        .emoji {
+            font-size: 32px;
+        }
+
+        /* Main Layout */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--space-lg);
+            margin-bottom: var(--space-lg);
+        }
+
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Card Styles */
+        .card {
+            background: var(--color-surface);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--color-border);
+            padding: var(--space-lg);
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-md);
+        }
+
+        .card h2 {
+            font-size: 20px;
+            color: var(--color-primary);
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+        }
+
+        /* Scenario Selection */
+        .scenarios-list {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-sm);
+        }
+
+        .scenario-btn {
+            background: var(--color-background);
+            border: 2px solid var(--color-border);
+            border-radius: var(--radius-md);
+            padding: var(--space-sm) var(--space-md);
+            cursor: pointer;
+            transition: all 200ms;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        .scenario-btn:hover {
+            border-color: var(--color-primary);
+            background: rgba(33, 128, 163, 0.05);
+        }
+
+        .scenario-btn.active {
+            background: var(--color-primary);
+            color: white;
+            border-color: var(--color-primary);
+        }
+
+        .scenario-label {
+            font-weight: 600;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .scenario-category {
+            font-size: 12px;
+            opacity: 0.7;
+        }
+
+        /* Chat Area */
+        .chat-area {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-md);
+            height: 600px;
+            max-height: 600px;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-sm);
+            padding: var(--space-md);
+            background: var(--color-background);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--color-border);
+        }
+
+        .message {
+            display: flex;
+            gap: var(--space-sm);
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message-bubble {
+            max-width: 80%;
+            padding: var(--space-sm) var(--space-md);
+            border-radius: var(--radius-md);
+            word-wrap: break-word;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .message.assistant .message-bubble {
+            background: var(--color-primary);
+            color: white;
+        }
+
+        .message.user .message-bubble {
+            background: var(--color-secondary);
+            color: white;
+        }
+
+        .message.system .message-bubble {
+            background: rgba(76, 175, 80, 0.1);
+            color: var(--color-text);
+            border-left: 4px solid var(--color-success);
+            font-style: italic;
+        }
+
+        /* Input Area */
+        .input-area {
+            display: flex;
+            gap: var(--space-sm);
+        }
+
+        .form-control {
+            flex: 1;
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
+            padding: var(--space-sm) var(--space-md);
+            font-size: 14px;
+            font-family: inherit;
+            transition: border-color 200ms;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(33, 128, 163, 0.1);
+        }
+
+        /* Buttons */
+        .btn {
+            padding: var(--space-sm) var(--space-md);
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 200ms;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .btn-primary {
+            background: var(--color-primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--color-primary-hover);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* Category Filter */
+        .category-filter {
+            display: flex;
+            gap: var(--space-xs);
+            margin-bottom: var(--space-md);
+            flex-wrap: wrap;
+        }
+
+        .category-btn {
+            padding: 6px 12px;
+            border: 1px solid var(--color-border);
+            border-radius: 20px;
+            background: var(--color-surface);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 200ms;
+        }
+
+        .category-btn:hover {
+            border-color: var(--color-primary);
+            color: var(--color-primary);
+        }
+
+        .category-btn.active {
+            background: var(--color-primary);
+            color: white;
+            border-color: var(--color-primary);
+        }
+
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--space-md);
+            margin-top: var(--space-md);
+        }
+
+        .stat-box {
+            background: var(--color-background);
+            padding: var(--space-md);
+            border-radius: var(--radius-md);
+            border-left: 4px solid var(--color-primary);
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--color-primary);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--color-text-secondary);
+            margin-top: 4px;
+        }
+
+        /* Loading State */
+        .loading {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .spinner {
+            width: 12px;
+            height: 12px;
+            border: 2px solid rgba(33, 128, 163, 0.3);
+            border-top-color: var(--color-primary);
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: var(--space-lg);
+            color: var(--color-text-secondary);
+        }
+
+        .empty-state-icon {
+            font-size: 40px;
+            margin-bottom: var(--space-md);
+        }
+
+        /* Progress */
+        .progress-item {
+            margin-bottom: var(--space-md);
+        }
+
+        .progress-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .progress-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: var(--color-border);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--color-primary);
+            transition: width 300ms;
+        }
+
+        /* Feedback Box */
+        .feedback-box {
+            background: rgba(230, 147, 93, 0.1);
+            border-left: 4px solid var(--color-secondary);
+            padding: var(--space-md);
+            border-radius: var(--radius-md);
+            margin: var(--space-md) 0 0 0;
+            display: none;
+        }
+
+        .feedback-box.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+
+        .feedback-title {
+            font-weight: 700;
+            color: var(--color-secondary);
+            margin-bottom: 8px;
+        }
+
+        .feedback-content {
+            font-size: 14px;
+            color: var(--color-text);
+            line-height: 1.5;
+        }
+
+        /* Home Link */
+        .home-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: white;
+            text-decoration: none;
+            font-size: 14px;
+            opacity: 0.9;
+            transition: opacity 200ms;
+        }
+
+        .home-link:hover {
+            opacity: 1;
+        }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            header h1 {
+                font-size: 24px;
+            }
+
+            .chat-area {
+                height: 500px;
+            }
+
+            .message-bubble {
+                max-width: 100%;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h1><span class="emoji">✨</span> CharmXP: AI Charisma Coach</h1>
+                <a href="index.html" class="home-link">← Back to Home</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="main-grid">
+            <!-- Scenarios Panel -->
+            <div class="card">
+                <h2><span class="emoji">🎯</span> Practice Scenarios</h2>
+                
+                <div class="category-filter">
+                    <button class="category-btn active" data-category="all">All</button>
+                    <button class="category-btn" data-category="charisma">Charisma</button>
+                    <button class="category-btn" data-category="public-speaking">Public Speaking</button>
+                    <button class="category-btn" data-category="communication">Communication</button>
+                    <button class="category-btn" data-category="dating">Dating</button>
+                </div>
+
+                <div class="scenarios-list" id="scenariosList"></div>
+            </div>
+
+            <!-- Chat Panel -->
+            <div class="card">
+                <h2><span class="emoji">💬</span> Chat with Your Coach</h2>
+                
+                <div id="scenarioContext" style="background: var(--color-background); padding: var(--space-md); border-radius: var(--radius-md); display: none; margin-bottom: var(--space-md);">
+                    <div style="font-weight: 600; margin-bottom: 4px; color: var(--color-primary);" id="contextTitle"></div>
+                    <div style="font-size: 14px; color: var(--color-text);" id="contextText"></div>
+                </div>
+
+                <div class="chat-area">
+                    <div class="chat-messages" id="chatMessages">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">👋</div>
+                            <p>Select a scenario to begin your charisma coaching session!</p>
+                        </div>
+                    </div>
+
+                    <div class="input-area">
+                        <textarea class="form-control" id="userInput" placeholder="Your response..." style="resize: none; height: 50px;" disabled></textarea>
+                        <button class="btn btn-primary" id="sendBtn" disabled>Send</button>
+                    </div>
+                </div>
+
+                <div class="feedback-box" id="feedbackBox">
+                    <div class="feedback-title">🏆 Coaching Feedback</div>
+                    <div class="feedback-content" id="feedbackContent"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress Tracking -->
+        <div class="card">
+            <h2><span class="emoji">📊</span> Your Progress</h2>
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="stat-value" id="totalPractices">0</div>
+                    <div class="stat-label">Practice Sessions</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="currentStreak">0</div>
+                    <div class="stat-label">Day Streak 🔥</div>
+                </div>
+            </div>
+
+            <div style="margin-top: var(--space-lg);">
+                <h3 style="font-size: 14px; font-weight: 600; margin-bottom: var(--space-md);">Performance by Category</h3>
+                <div id="categoryProgress"></div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Scenario Database
+        const scenarios = [
+            {
+                id: 1,
+                title: "Meeting Someone at a Party",
+                context: "You're at a networking event. Someone interesting walks by.",
+                prompt: "What do you say to break the ice?",
+                category: "charisma"
+            },
+            {
+                id: 2,
+                title: "Asking for a Raise",
+                context: "You've been at your job for 2 years, doing great work.",
+                prompt: "How do you approach your manager?",
+                category: "communication"
+            },
+            {
+                id: 3,
+                title: "Starting a Presentation",
+                context: "You're about to present to 50 people at a company meeting.",
+                prompt: "How do you open your presentation?",
+                category: "public-speaking"
+            },
+            {
+                id: 4,
+                title: "Handling Criticism",
+                context: "A colleague just criticized your idea in a meeting.",
+                prompt: "How do you respond confidently?",
+                category: "charisma"
+            },
+            {
+                id: 5,
+                title: "Speed Dating",
+                context: "You have 2 minutes with someone interesting.",
+                prompt: "What's your opening line and question?",
+                category: "dating"
+            },
+            {
+                id: 6,
+                title: "Networking Introduction",
+                context: "You're at a tech conference and want to talk to someone impressive.",
+                prompt: "How do you introduce yourself?",
+                category: "communication"
+            },
+            {
+                id: 7,
+                title: "Speaking Up in Meetings",
+                context: "You have an important idea but the meeting is dominated by loud voices.",
+                prompt: "How do you get your point across?",
+                category: "public-speaking"
+            },
+            {
+                id: 8,
+                title: "Handling Rejection",
+                context: "Someone declined your invitation to coffee.",
+                prompt: "How do you respond gracefully?",
+                category: "dating"
+            },
+            {
+                id: 9,
+                title: "Captivating Storytelling",
+                context: "You're at dinner and want to tell an engaging story.",
+                prompt: "How do you set up and tell the story?",
+                category: "charisma"
+            },
+            {
+                id: 10,
+                title: "Professional Feedback",
+                context: "Your boss asks for your thoughts on your performance.",
+                prompt: "How do you confidently discuss your wins and areas to grow?",
+                category: "communication"
+            }
+        ];
+
+        // State
+        let currentScenario = null;
+        let currentCategory = "all";
+        let messages = [];
+        let practices = [];
+        let isWaiting = false;
+
+        // Initialize
+        document.addEventListener("DOMContentLoaded", () => {
+            loadPractices();
+            renderScenarios();
+            attachEventListeners();
+        });
+
+        function attachEventListeners() {
+            // Category filter
+            document.querySelectorAll(".category-btn").forEach(btn => {
+                btn.addEventListener("click", (e) => {
+                    document.querySelectorAll(".category-btn").forEach(b => b.classList.remove("active"));
+                    e.target.classList.add("active");
+                    currentCategory = e.target.dataset.category;
+                    renderScenarios();
+                });
+            });
+
+            // Send button
+            document.getElementById("sendBtn").addEventListener("click", () => sendMessage());
+            document.getElementById("userInput").addEventListener("keydown", (e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+        }
+
+        function renderScenarios() {
+            const container = document.getElementById("scenariosList");
+            const filtered = currentCategory === "all" 
+                ? scenarios 
+                : scenarios.filter(s => s.category === currentCategory);
+
+            container.innerHTML = filtered.map(scenario => `
+                <button class="scenario-btn ${currentScenario?.id === scenario.id ? 'active' : ''}" data-id="${scenario.id}">
+                    <span class="scenario-label">${scenario.title}</span>
+                    <span class="scenario-category">${scenario.category}</span>
+                </button>
+            `).join("");
+
+            container.querySelectorAll(".scenario-btn").forEach(btn => {
+                btn.addEventListener("click", () => selectScenario(parseInt(btn.dataset.id)));
+            });
+        }
+
+        function selectScenario(id) {
+            currentScenario = scenarios.find(s => s.id === id);
+            messages = [];
+            isWaiting = false;
+
+            document.getElementById("contextTitle").textContent = currentScenario.title;
+            document.getElementById("contextText").textContent = currentScenario.context + "\n\n📝 " + currentScenario.prompt;
+            document.getElementById("scenarioContext").style.display = "block";
+            document.getElementById("userInput").disabled = false;
+            document.getElementById("sendBtn").disabled = false;
+            document.getElementById("feedbackBox").classList.remove("show");
+
+            renderScenarios();
+
+            const chatMessages = document.getElementById("chatMessages");
+            chatMessages.innerHTML = `
+                <div class="message assistant">
+                    <div class="message-bubble">
+                        Let's practice this scenario! Here's the situation: ${currentScenario.context} 
+                        
+                        ${currentScenario.prompt}
+                    </div>
+                </div>
+            `;
+
+            document.getElementById("userInput").focus();
+        }
+
+        async function sendMessage() {
+            if (!currentScenario || isWaiting) return;
+
+            const userText = document.getElementById("userInput").value.trim();
+            if (!userText) return;
+
+            isWaiting = true;
+            document.getElementById("sendBtn").disabled = true;
+
+            messages.push({ role: "user", content: userText });
+            renderMessages();
+            document.getElementById("userInput").value = "";
+
+            const chatMessages = document.getElementById("chatMessages");
+            const loadingDiv = document.createElement("div");
+            loadingDiv.className = "message assistant";
+            loadingDiv.innerHTML = `<div class="message-bubble"><div class="loading"><div class="spinner"></div>Getting coaching...</div></div>`;
+            chatMessages.appendChild(loadingDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            try {
+                const feedback = await getCoachingFeedback(userText);
+                loadingDiv.remove();
+                messages.push({ role: "assistant", content: feedback });
+                renderMessages();
+                displayFeedback(feedback);
+                savePractice();
+            } catch (error) {
+                loadingDiv.remove();
+                const errorDiv = document.createElement("div");
+                errorDiv.className = "message system";
+                errorDiv.innerHTML = `<div class="message-bubble">⚠️ Coaching unavailable. Try again in a moment.</div>`;
+                chatMessages.appendChild(errorDiv);
+                console.error("Error:", error);
+            }
+
+            isWaiting = false;
+            document.getElementById("sendBtn").disabled = false;
+            document.getElementById("userInput").focus();
+        }
+
+        async function getCoachingFeedback(userResponse) {
+    const apiKey = prompt("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"); // Or use env variable in production
+    
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+            "Authorization": `Bearer ${apiKey}`,
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            model: "meta-llama/llama-3.3-70b-instruct:free",
+            messages: [{
+                role: "user",
+                content: `You are an expert charisma coach. Scenario: "${currentScenario.context}" Their response: "${userResponse}" Give coaching feedback with: ✅ What they did well, 📈 Areas to improve, 💡 Better approach, 🎯 Key takeaway. Be encouraging and specific.`
+            }],
+            temperature: 0.7
+        })
+    });
+    
+    const data = await response.json();
+    return data.choices[0].message.content;
+}
+
+        function displayFeedback(feedback) {
+            const feedbackBox = document.getElementById("feedbackBox");
+            feedbackBox.querySelector("#feedbackContent").innerHTML = feedback;
+            feedbackBox.classList.add("show");
+        }
+
+        function renderMessages() {
+            const chatMessages = document.getElementById("chatMessages");
+            chatMessages.innerHTML = messages.map(msg => `
+                <div class="message ${msg.role}">
+                    <div class="message-bubble">${msg.content}</div>
+                </div>
+            `).join("");
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function savePractice() {
+            practices.push({
+                date: new Date().toISOString(),
+                scenario: currentScenario.title,
+                category: currentScenario.category
+            });
+            localStorage.setItem("practices", JSON.stringify(practices));
+            updateProgress();
+        }
+
+        function loadPractices() {
+            const saved = localStorage.getItem("practices");
+            practices = saved ? JSON.parse(saved) : [];
+            updateProgress();
+        }
+
+        function updateProgress() {
+            document.getElementById("totalPractices").textContent = practices.length;
+
+            let streak = 0;
+            const today = new Date();
+            let checkDate = new Date(today);
+            
+            while (true) {
+                const dateStr = checkDate.toISOString().split("T")[0];
+                const hasToday = practices.some(p => p.date.split("T")[0] === dateStr);
+                if (hasToday) {
+                    streak++;
+                    checkDate.setDate(checkDate.getDate() - 1);
+                } else {
+                    break;
+                }
+            }
+            document.getElementById("currentStreak").textContent = streak;
+
+            const byCategory = {};
+            scenarios.forEach(s => {
+                const count = practices.filter(p => p.category === s.category).length;
+                byCategory[s.category] = (byCategory[s.category] || 0) + count;
+            });
+
+            const categories = ["charisma", "public-speaking", "communication", "dating"];
+            const progressHTML = categories.map(cat => {
+                const count = byCategory[cat] || 0;
+                const max = 3;
+                const percent = Math.min((count / max) * 100, 100);
+                return `
+                    <div class="progress-item">
+                        <div class="progress-label">${cat.split("-").map(w => w[0].toUpperCase() + w.slice(1)).join(" ")} (${count}/${max})</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${percent}%"></div>
+                        </div>
+                    </div>
+                `;
+            }).join("");
+            
+            document.getElementById("categoryProgress").innerHTML = progressHTML;
+        }
+    </script>
+</body>
+</html>
