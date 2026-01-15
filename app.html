@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>Charisma Coach Chatbot</title>
+  <script src="https://js.puter.com/v2/"></script>
   <style>
     body {
       font-family: system-ui, sans-serif;
@@ -69,6 +70,26 @@
       margin-left: auto;
     }
 
+    .image-container {
+      margin-top: 10px;
+      max-width: 350px;
+    }
+
+    .image-container img {
+      max-width: 100%;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .image-loading {
+      background: #f0f0f0;
+      padding: 10px;
+      border-radius: 10px;
+      color: #666;
+      font-style: italic;
+      margin-top: 10px;
+    }
+
     #inputBar {
       display: flex;
       padding: 12px;
@@ -119,13 +140,13 @@ const scenarios = [
   {
     id: 1,
     title: "Networking Event",
-    context: "You’re at a adult film festival meeting your all time favorite adult film actress Aletta Ocean",
+    context: "You're at a adult film festival meeting your all time favorite adult film actress Aletta Ocean",
     prompt: "Start the conversation meeting her for the first time"
   },
   {
     id: 2,
     title: "Personal Meeting",
-    context: "You’re at a licensed therapist who indulges you",
+    context: "You're at a licensed therapist who indulges you",
     prompt: "Open the conversation whoever you want"
   }
 ];
@@ -143,6 +164,38 @@ function getApiKey() {
     if (key) localStorage.setItem("openrouter_api_key", key);
   }
   return key;
+}
+
+/* ---------------- IMAGE GENERATION ---------------- */
+
+async function generateImageFromContext(text) {
+  try {
+    // Extract a visual description from the text
+    const imagePrompt = text.substring(0, 200); // First 200 chars as prompt
+    
+    console.log("Generating image for:", imagePrompt);
+    
+    const imageUrl = await puter.ai.txt2img(imagePrompt, {
+      model: "stabilityai/stable-diffusion-xl-base-1.0"
+    });
+    
+    return imageUrl;
+  } catch (error) {
+    console.error("Image generation failed:", error);
+    return null;
+  }
+}
+
+function shouldGenerateImage(content) {
+  // Generate image if message contains visual descriptors or certain keywords
+  const imageKeywords = [
+    "describe", "see", "look", "imagine", "picture", "visualize", 
+    "scene", "show", "appearance", "look like", "dress", "outfit",
+    "environment", "setting", "standing", "sitting", "wearing"
+  ];
+  
+  const lowerContent = content.toLowerCase();
+  return imageKeywords.some(keyword => lowerContent.includes(keyword));
 }
 
 /* ---------------- UI RENDER ---------------- */
@@ -164,13 +217,31 @@ function renderMessages() {
   const chat = document.getElementById("chatMessages");
   chat.innerHTML = "";
 
-  messages.forEach(m => {
+  messages.forEach((m, index) => {
     if (m.role === "system") return;
 
     const div = document.createElement("div");
     div.className = "message " + (m.role === "assistant" ? "assistant" : "user");
     div.textContent = m.content;
     chat.appendChild(div);
+
+    // Display image if it exists for this message
+    if (m.imageUrl) {
+      const imgContainer = document.createElement("div");
+      imgContainer.className = "image-container";
+      const img = document.createElement("img");
+      img.src = m.imageUrl;
+      imgContainer.appendChild(img);
+      chat.appendChild(imgContainer);
+    }
+
+    // Show loading state if image is being generated
+    if (m.generatingImage) {
+      const loading = document.createElement("div");
+      loading.className = "image-loading";
+      loading.textContent = "✨ Generating image...";
+      chat.appendChild(loading);
+    }
   });
 
   chat.scrollTop = chat.scrollHeight;
@@ -189,7 +260,7 @@ function selectScenario(id) {
     },
     {
       role: "assistant",
-      content: `Alright, here’s the situation:
+      content: `Alright, here's the situation:
 
 ${currentScenario.context}
 
@@ -244,8 +315,32 @@ async function sendMessage() {
     const data = await res.json();
     const reply = data.choices[0].message.content;
 
-    messages.push({ role: "assistant", content: reply });
-    renderMessages();
+    // Add assistant message with flag for potential image generation
+    const messageObj = { role: "assistant", content: reply };
+    
+    if (shouldGenerateImage(reply)) {
+      messageObj.generatingImage = true;
+      messages.push(messageObj);
+      renderMessages();
+
+      // Generate image asynchronously
+      const imageUrl = await generateImageFromContext(reply);
+      if (imageUrl) {
+        // Find the message we just added and attach the image
+        const lastMsg = messages[messages.length - 1];
+        lastMsg.imageUrl = imageUrl;
+        lastMsg.generatingImage = false;
+        renderMessages();
+      } else {
+        // Remove loading state if generation failed
+        const lastMsg = messages[messages.length - 1];
+        lastMsg.generatingImage = false;
+        renderMessages();
+      }
+    } else {
+      messages.push(messageObj);
+      renderMessages();
+    }
   } catch (err) {
     alert("API error. Check console.");
     console.error(err);
