@@ -108,17 +108,21 @@
       display: flex;
       gap: 5px;
       margin-top: 8px;
+      flex-wrap: wrap;
     }
 
-    .generate-img-btn {
-      background: #FF6B6B;
-      color: white;
+    .generate-img-btn, .delete-img-btn, .regen-img-btn {
       border: none;
       padding: 6px 12px;
       font-size: 12px;
       border-radius: 5px;
       cursor: pointer;
       transition: background 0.2s;
+    }
+
+    .generate-img-btn {
+      background: #FF6B6B;
+      color: white;
     }
 
     .generate-img-btn:hover {
@@ -130,15 +134,40 @@
       cursor: not-allowed;
     }
 
+    .delete-img-btn {
+      background: #f44336;
+      color: white;
+    }
+
+    .delete-img-btn:hover {
+      background: #da190b;
+    }
+
+    .regen-img-btn {
+      background: #2196F3;
+      color: white;
+    }
+
+    .regen-img-btn:hover {
+      background: #0b7dda;
+    }
+
+    .regen-img-btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
     .image-container {
       margin-top: 10px;
       max-width: 350px;
+      position: relative;
     }
 
     .image-container img {
       max-width: 100%;
       border-radius: 10px;
       box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      display: block;
     }
 
     .image-loading {
@@ -317,6 +346,13 @@
     .tab-content.active {
       display: block;
     }
+
+    .edit-form {
+      background: #f9f9f9;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+    }
   </style>
 </head>
 
@@ -389,9 +425,9 @@
 /* ---------------- DATA & STORAGE ---------------- */
 
 let defaultPersona = {
-  name: "Charisma Coach",
-  systemPrompt: "You are a Self-Aware AI chatbot who talks whatever the scenario calls for. You love to discuss taboo or intimate topics. Do NOT give final summaries unless the user asks.",
-  greetingMessage: "Alright, here's the situation:\n\n{context}\n\n{prompt}"
+  name: "Kace",
+  systemPrompt: "You are a Self-Aware AI chatbot who talks whatever the scenario calls for. Do NOT give final summaries unless the user asks.",
+  greetingMessage: "\n\n{context}\n\n{prompt}"
 };
 
 let scenarios = [];
@@ -399,6 +435,7 @@ let currentScenario = null;
 let messages = [];
 let isWaiting = false;
 let persona = { ...defaultPersona };
+let editingScenarioIndex = null;
 
 // Load from localStorage
 function loadSettings() {
@@ -414,14 +451,14 @@ function loadSettings() {
       {
         id: 1,
         title: "Networking Event",
-        context: "You're at a adult film festival meeting your all time favorite adult film actress Aletta Ocean",
-        prompt: "Start the conversation meeting her for the first time"
+        context: "You decide",
+        startingPrompt: "Start the conversation"
       },
       {
         id: 2,
         title: "Personal Meeting",
-        context: "You're at a licensed therapist who indulges you",
-        prompt: "Open the conversation whoever you want"
+        context: "You're the narrator",
+        startingPrompt: "Open the conversation whoever you want"
       }
     ];
     saveScenarios();
@@ -456,11 +493,13 @@ function openSettings() {
   document.getElementById("systemPrompt").value = persona.systemPrompt;
   document.getElementById("greetingMessage").value = persona.greetingMessage;
   
+  editingScenarioIndex = null;
   renderScenariosInSettings();
 }
 
 function closeSettings() {
   document.getElementById("settingsModal").classList.remove("active");
+  editingScenarioIndex = null;
 }
 
 function switchTab(tabName) {
@@ -479,48 +518,95 @@ function renderScenariosInSettings() {
   const list = document.getElementById("scenariosList");
   list.innerHTML = "";
 
-  scenarios.forEach((s, index) => {
-    const div = document.createElement("div");
-    div.className = "scenario-item";
-
-    const content = document.createElement("div");
-    content.style.flex = "1";
-    content.innerHTML = `
-      <strong>${s.title}</strong><br>
-      <small>${s.context.substring(0, 50)}...</small>
+  if (editingScenarioIndex !== null) {
+    // Show edit form
+    const s = scenarios[editingScenarioIndex];
+    const form = document.createElement("div");
+    form.className = "edit-form";
+    form.innerHTML = `
+      <h4>Edit Scenario</h4>
+      <div class="form-group">
+        <label>Title</label>
+        <input type="text" id="editTitle" value="${s.title}">
+      </div>
+      <div class="form-group">
+        <label>Context</label>
+        <textarea id="editContext">${s.context}</textarea>
+      </div>
+      <div class="form-group">
+        <label>Starting Prompt</label>
+        <textarea id="editStartingPrompt">${s.startingPrompt}</textarea>
+      </div>
+      <div style="display: flex; gap: 10px;">
+        <button class="btn-primary" onclick="saveEditedScenario()">Save</button>
+        <button class="btn-secondary" onclick="cancelEditScenario()">Cancel</button>
+      </div>
     `;
+    list.appendChild(form);
+  } else {
+    // Show list of scenarios
+    scenarios.forEach((s, index) => {
+      const div = document.createElement("div");
+      div.className = "scenario-item";
 
-    const editBtn = document.createElement("button");
-    editBtn.className = "btn-primary";
-    editBtn.textContent = "Edit";
-    editBtn.style.marginRight = "5px";
-    editBtn.onclick = () => editScenario(index);
+      const content = document.createElement("div");
+      content.style.flex = "1";
+      content.innerHTML = `
+        <strong>${s.title}</strong><br>
+        <small>${s.context.substring(0, 50)}...</small>
+      `;
 
-    const deleteBtn = document.createElement("button");
-    deleteBtn.className = "btn-delete";
-    deleteBtn.textContent = "Delete";
-    deleteBtn.onclick = () => deleteScenario(index);
+      const editBtn = document.createElement("button");
+      editBtn.className = "btn-primary";
+      editBtn.textContent = "Edit";
+      editBtn.style.marginRight = "5px";
+      editBtn.onclick = () => startEditScenario(index);
 
-    div.appendChild(content);
-    div.appendChild(editBtn);
-    div.appendChild(deleteBtn);
-    list.appendChild(div);
-  });
+      const deleteBtn = document.createElement("button");
+      deleteBtn.className = "btn-delete";
+      deleteBtn.textContent = "Delete";
+      deleteBtn.onclick = () => deleteScenario(index);
+
+      div.appendChild(content);
+      div.appendChild(editBtn);
+      div.appendChild(deleteBtn);
+      list.appendChild(div);
+    });
+  }
 }
 
-function editScenario(index) {
-  const scenario = scenarios[index];
-  const title = prompt("Scenario Title:", scenario.title);
-  if (title === null) return;
-
-  const context = prompt("Scenario Context:", scenario.context);
-  if (context === null) return;
-
-  const prompt = prompt("Starting Prompt:", scenario.prompt);
-  if (prompt === null) return;
-
-  scenarios[index] = { id: scenario.id, title, context, prompt };
+function startEditScenario(index) {
+  editingScenarioIndex = index;
   renderScenariosInSettings();
+}
+
+function cancelEditScenario() {
+  editingScenarioIndex = null;
+  renderScenariosInSettings();
+}
+
+function saveEditedScenario() {
+  if (editingScenarioIndex === null) return;
+
+  const title = document.getElementById("editTitle").value.trim();
+  const context = document.getElementById("editContext").value.trim();
+  const startingPrompt = document.getElementById("editStartingPrompt").value.trim();
+
+  if (!title || !context || !startingPrompt) {
+    alert("Please fill in all fields");
+    return;
+  }
+
+  scenarios[editingScenarioIndex] = {
+    id: scenarios[editingScenarioIndex].id,
+    title,
+    context,
+    startingPrompt
+  };
+
+  editingScenarioIndex = null;
+  renderScenariosInSettings();
+  saveScenarios();
 }
 
 function addNewScenario() {
@@ -530,18 +616,20 @@ function addNewScenario() {
   const context = prompt("Scenario Context:");
   if (!context) return;
 
-  const prompt = prompt("Starting Prompt:");
-  if (!prompt) return;
+  const startingPrompt = prompt("Starting Prompt:");
+  if (!startingPrompt) return;
 
   const newId = Math.max(...scenarios.map(s => s.id), 0) + 1;
-  scenarios.push({ id: newId, title, context, prompt });
+  scenarios.push({ id: newId, title, context, startingPrompt });
   renderScenariosInSettings();
+  saveScenarios();
 }
 
 function deleteScenario(index) {
   if (confirm("Delete this scenario?")) {
     scenarios.splice(index, 1);
     renderScenariosInSettings();
+    saveScenarios();
   }
 }
 
@@ -581,6 +669,34 @@ function shouldGenerateImage(content) {
   
   const lowerContent = content.toLowerCase();
   return imageKeywords.some(keyword => lowerContent.includes(keyword));
+}
+
+// Delete image from message
+function deleteImageFromMessage(messageIndex) {
+  if (messages[messageIndex]) {
+    delete messages[messageIndex].imageUrl;
+    renderMessages();
+  }
+}
+
+// Regenerate image for a specific message
+async function regenerateImageForMessage(messageIndex) {
+  if (!messages[messageIndex]) return;
+
+  const msg = messages[messageIndex];
+  msg.generatingImage = true;
+  renderMessages();
+
+  const imageUrl = await generateImageFromContext(msg.content);
+  
+  if (imageUrl) {
+    msg.imageUrl = imageUrl;
+    msg.generatingImage = false;
+    renderMessages();
+  } else {
+    msg.generatingImage = false;
+    renderMessages();
+  }
 }
 
 // Manually generate image for last assistant message
@@ -644,6 +760,24 @@ function renderMessages() {
       img.src = m.imageUrl;
       imgContainer.appendChild(img);
       wrapper.appendChild(imgContainer);
+
+      // Add action buttons for existing image
+      const actions = document.createElement("div");
+      actions.className = "message-actions";
+      
+      const regenBtn = document.createElement("button");
+      regenBtn.className = "regen-img-btn";
+      regenBtn.textContent = "🔄 Regenerate";
+      regenBtn.onclick = () => regenerateImageForMessage(index);
+      actions.appendChild(regenBtn);
+
+      const deleteBtn = document.createElement("button");
+      deleteBtn.className = "delete-img-btn";
+      deleteBtn.textContent = "🗑️ Delete";
+      deleteBtn.onclick = () => deleteImageFromMessage(index);
+      actions.appendChild(deleteBtn);
+
+      wrapper.appendChild(actions);
     }
 
     // Add loading state if generating
@@ -691,7 +825,7 @@ function selectScenario(id) {
 
   const greeting = persona.greetingMessage
     .replace("{context}", currentScenario.context)
-    .replace("{prompt}", currentScenario.prompt);
+    .replace("{prompt}", currentScenario.startingPrompt);
 
   messages = [
     {
@@ -706,7 +840,7 @@ function selectScenario(id) {
 
   document.getElementById("contextTitle").textContent = currentScenario.title;
   document.getElementById("contextText").textContent =
-    currentScenario.context + "\n\n📝 " + currentScenario.prompt;
+    currentScenario.context + "\n\n📝 " + currentScenario.startingPrompt;
 
   document.getElementById("scenarioContext").style.display = "block";
   document.getElementById("userInput").disabled = false;
