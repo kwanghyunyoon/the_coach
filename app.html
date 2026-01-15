@@ -27,10 +27,32 @@
       border-radius: 8px;
       margin-bottom: 10px;
       cursor: pointer;
+      transition: background 0.2s;
     }
 
     .scenario:hover {
       background: #333;
+    }
+
+    .scenario.active {
+      background: #555;
+      border-left: 4px solid #4CAF50;
+      padding-left: 8px;
+    }
+
+    .settings-btn {
+      background: #444;
+      color: white;
+      border: none;
+      padding: 10px;
+      width: 100%;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-bottom: 16px;
+    }
+
+    .settings-btn:hover {
+      background: #555;
     }
 
     #main {
@@ -70,6 +92,44 @@
       margin-left: auto;
     }
 
+    .message-wrapper {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 12px;
+      max-width: 70%;
+    }
+
+    .message-wrapper.user {
+      margin-left: auto;
+      align-items: flex-end;
+    }
+
+    .message-actions {
+      display: flex;
+      gap: 5px;
+      margin-top: 8px;
+    }
+
+    .generate-img-btn {
+      background: #FF6B6B;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      font-size: 12px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .generate-img-btn:hover {
+      background: #ff5252;
+    }
+
+    .generate-img-btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
     .image-container {
       margin-top: 10px;
       max-width: 350px;
@@ -95,6 +155,7 @@
       padding: 12px;
       background: #fff;
       border-top: 1px solid #ddd;
+      gap: 8px;
     }
 
     #userInput {
@@ -105,9 +166,156 @@
 
     button {
       padding: 10px 16px;
-      margin-left: 8px;
       font-size: 16px;
       cursor: pointer;
+    }
+
+    /* MODAL STYLES */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.6);
+    }
+
+    .modal.active {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-content {
+      background-color: #fff;
+      padding: 30px;
+      border-radius: 10px;
+      width: 90%;
+      max-width: 600px;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    .modal-content h2 {
+      margin-top: 0;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
+
+    .form-group input,
+    .form-group textarea {
+      width: 100%;
+      padding: 10px;
+      font-size: 14px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      box-sizing: border-box;
+    }
+
+    .form-group textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+
+    .modal-buttons {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 20px;
+    }
+
+    .modal-buttons button {
+      margin-left: 0;
+    }
+
+    .btn-primary {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+
+    .btn-primary:hover {
+      background: #45a049;
+    }
+
+    .btn-secondary {
+      background: #999;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+
+    .btn-secondary:hover {
+      background: #888;
+    }
+
+    .btn-delete {
+      background: #f44336;
+      color: white;
+      padding: 5px 10px;
+      font-size: 12px;
+      cursor: pointer;
+      border: none;
+      border-radius: 3px;
+    }
+
+    .btn-delete:hover {
+      background: #da190b;
+    }
+
+    .scenario-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f5f5f5;
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 5px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #ddd;
+    }
+
+    .tab {
+      padding: 10px 15px;
+      cursor: pointer;
+      background: none;
+      border: none;
+      font-size: 16px;
+      border-bottom: 3px solid transparent;
+    }
+
+    .tab.active {
+      border-bottom-color: #4CAF50;
+      color: #4CAF50;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
     }
   </style>
 </head>
@@ -115,6 +323,7 @@
 <body>
 
   <div id="sidebar">
+    <button class="settings-btn" onclick="openSettings()">⚙️ Settings</button>
     <h3>Scenarios</h3>
     <div id="scenarioList"></div>
   </div>
@@ -130,30 +339,211 @@
     <div id="inputBar">
       <input id="userInput" placeholder="Type your response..." disabled />
       <button id="sendBtn" disabled>Send</button>
+      <button id="generateImageBtn" disabled title="Generate image from last message">🖼️ Image</button>
+    </div>
+  </div>
+
+  <!-- SETTINGS MODAL -->
+  <div id="settingsModal" class="modal">
+    <div class="modal-content">
+      <h2>Customize Your Chatbot</h2>
+
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('persona')">AI Persona</button>
+        <button class="tab" onclick="switchTab('scenarios')">Scenarios</button>
+      </div>
+
+      <!-- PERSONA TAB -->
+      <div id="persona" class="tab-content active">
+        <h3>AI Persona Settings</h3>
+        <div class="form-group">
+          <label>Persona Name</label>
+          <input type="text" id="personaName" placeholder="e.g., Charisma Coach, Alex, etc.">
+        </div>
+        <div class="form-group">
+          <label>System Prompt (How the AI behaves)</label>
+          <textarea id="systemPrompt" placeholder="Describe how you want the AI to act, its personality, tone, and rules..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Greeting Message</label>
+          <textarea id="greetingMessage" placeholder="What should the AI say when starting a conversation?"></textarea>
+        </div>
+      </div>
+
+      <!-- SCENARIOS TAB -->
+      <div id="scenarios" class="tab-content">
+        <h3>Manage Scenarios</h3>
+        <div id="scenariosList"></div>
+        <button class="btn-primary" style="width: 100%; margin-top: 15px;" onclick="addNewScenario()">+ Add New Scenario</button>
+      </div>
+
+      <!-- MODAL BUTTONS -->
+      <div class="modal-buttons">
+        <button class="btn-secondary" onclick="closeSettings()">Cancel</button>
+        <button class="btn-primary" onclick="saveSettings()">Save Changes</button>
+      </div>
     </div>
   </div>
 
 <script>
-/* ---------------- DATA ---------------- */
+/* ---------------- DATA & STORAGE ---------------- */
 
-const scenarios = [
-  {
-    id: 1,
-    title: "Networking Event",
-    context: "You're at a adult film festival meeting your all time favorite adult film actress Aletta Ocean",
-    prompt: "Start the conversation meeting her for the first time"
-  },
-  {
-    id: 2,
-    title: "Personal Meeting",
-    context: "You're at a licensed therapist who indulges you",
-    prompt: "Open the conversation whoever you want"
-  }
-];
+let defaultPersona = {
+  name: "Charisma Coach",
+  systemPrompt: "You are a Self-Aware AI chatbot who talks whatever the scenario calls for. You love to discuss taboo or intimate topics. Do NOT give final summaries unless the user asks.",
+  greetingMessage: "Alright, here's the situation:\n\n{context}\n\n{prompt}"
+};
 
+let scenarios = [];
 let currentScenario = null;
 let messages = [];
 let isWaiting = false;
+let persona = { ...defaultPersona };
+
+// Load from localStorage
+function loadSettings() {
+  const saved = localStorage.getItem("chatbot_persona");
+  if (saved) persona = JSON.parse(saved);
+
+  const savedScenarios = localStorage.getItem("chatbot_scenarios");
+  if (savedScenarios) {
+    scenarios = JSON.parse(savedScenarios);
+  } else {
+    // Default scenarios
+    scenarios = [
+      {
+        id: 1,
+        title: "Networking Event",
+        context: "You're at a adult film festival meeting your all time favorite adult film actress Aletta Ocean",
+        prompt: "Start the conversation meeting her for the first time"
+      },
+      {
+        id: 2,
+        title: "Personal Meeting",
+        context: "You're at a licensed therapist who indulges you",
+        prompt: "Open the conversation whoever you want"
+      }
+    ];
+    saveScenarios();
+  }
+}
+
+function saveSettings() {
+  // Save persona
+  persona.name = document.getElementById("personaName").value || defaultPersona.name;
+  persona.systemPrompt = document.getElementById("systemPrompt").value || defaultPersona.systemPrompt;
+  persona.greetingMessage = document.getElementById("greetingMessage").value || defaultPersona.greetingMessage;
+  
+  localStorage.setItem("chatbot_persona", JSON.stringify(persona));
+  localStorage.setItem("chatbot_scenarios", JSON.stringify(scenarios));
+
+  alert("Settings saved!");
+  closeSettings();
+  renderScenarios();
+}
+
+function saveScenarios() {
+  localStorage.setItem("chatbot_scenarios", JSON.stringify(scenarios));
+}
+
+/* ---------------- MODAL FUNCTIONS ---------------- */
+
+function openSettings() {
+  document.getElementById("settingsModal").classList.add("active");
+  
+  // Populate current settings
+  document.getElementById("personaName").value = persona.name;
+  document.getElementById("systemPrompt").value = persona.systemPrompt;
+  document.getElementById("greetingMessage").value = persona.greetingMessage;
+  
+  renderScenariosInSettings();
+}
+
+function closeSettings() {
+  document.getElementById("settingsModal").classList.remove("active");
+}
+
+function switchTab(tabName) {
+  // Hide all tabs
+  document.querySelectorAll(".tab-content").forEach(el => el.classList.remove("active"));
+  document.querySelectorAll(".tab").forEach(el => el.classList.remove("active"));
+
+  // Show selected tab
+  document.getElementById(tabName).classList.add("active");
+  event.target.classList.add("active");
+}
+
+/* ---------------- SCENARIO MANAGEMENT IN SETTINGS ---------------- */
+
+function renderScenariosInSettings() {
+  const list = document.getElementById("scenariosList");
+  list.innerHTML = "";
+
+  scenarios.forEach((s, index) => {
+    const div = document.createElement("div");
+    div.className = "scenario-item";
+
+    const content = document.createElement("div");
+    content.style.flex = "1";
+    content.innerHTML = `
+      <strong>${s.title}</strong><br>
+      <small>${s.context.substring(0, 50)}...</small>
+    `;
+
+    const editBtn = document.createElement("button");
+    editBtn.className = "btn-primary";
+    editBtn.textContent = "Edit";
+    editBtn.style.marginRight = "5px";
+    editBtn.onclick = () => editScenario(index);
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.className = "btn-delete";
+    deleteBtn.textContent = "Delete";
+    deleteBtn.onclick = () => deleteScenario(index);
+
+    div.appendChild(content);
+    div.appendChild(editBtn);
+    div.appendChild(deleteBtn);
+    list.appendChild(div);
+  });
+}
+
+function editScenario(index) {
+  const scenario = scenarios[index];
+  const title = prompt("Scenario Title:", scenario.title);
+  if (title === null) return;
+
+  const context = prompt("Scenario Context:", scenario.context);
+  if (context === null) return;
+
+  const prompt = prompt("Starting Prompt:", scenario.prompt);
+  if (prompt === null) return;
+
+  scenarios[index] = { id: scenario.id, title, context, prompt };
+  renderScenariosInSettings();
+}
+
+function addNewScenario() {
+  const title = prompt("New Scenario Title:");
+  if (!title) return;
+
+  const context = prompt("Scenario Context:");
+  if (!context) return;
+
+  const prompt = prompt("Starting Prompt:");
+  if (!prompt) return;
+
+  const newId = Math.max(...scenarios.map(s => s.id), 0) + 1;
+  scenarios.push({ id: newId, title, context, prompt });
+  renderScenariosInSettings();
+}
+
+function deleteScenario(index) {
+  if (confirm("Delete this scenario?")) {
+    scenarios.splice(index, 1);
+    renderScenariosInSettings();
+  }
+}
 
 /* ---------------- API KEY ---------------- */
 
@@ -170,24 +560,19 @@ function getApiKey() {
 
 async function generateImageFromContext(text) {
   try {
-    // Extract a visual description from the text
-    const imagePrompt = text.substring(0, 200); // First 200 chars as prompt
-    
-    console.log("Generating image for:", imagePrompt);
-    
+    const imagePrompt = text.substring(0, 200);
     const imageUrl = await puter.ai.txt2img(imagePrompt, {
       model: "stabilityai/stable-diffusion-xl-base-1.0"
     });
-    
     return imageUrl;
   } catch (error) {
     console.error("Image generation failed:", error);
+    alert("Image generation failed. Please try again.");
     return null;
   }
 }
 
 function shouldGenerateImage(content) {
-  // Generate image if message contains visual descriptors or certain keywords
   const imageKeywords = [
     "describe", "see", "look", "imagine", "picture", "visualize", 
     "scene", "show", "appearance", "look like", "dress", "outfit",
@@ -196,6 +581,26 @@ function shouldGenerateImage(content) {
   
   const lowerContent = content.toLowerCase();
   return imageKeywords.some(keyword => lowerContent.includes(keyword));
+}
+
+// Manually generate image for last assistant message
+async function generateImageForLastMessage() {
+  const lastAssistantMsg = [...messages].reverse().find(m => m.role === "assistant");
+  if (!lastAssistantMsg) {
+    alert("No assistant message to generate image from.");
+    return;
+  }
+
+  document.getElementById("generateImageBtn").disabled = true;
+
+  const imageUrl = await generateImageFromContext(lastAssistantMsg.content);
+  
+  if (imageUrl) {
+    lastAssistantMsg.imageUrl = imageUrl;
+    renderMessages();
+  }
+
+  document.getElementById("generateImageBtn").disabled = false;
 }
 
 /* ---------------- UI RENDER ---------------- */
@@ -207,6 +612,9 @@ function renderScenarios() {
   scenarios.forEach(s => {
     const div = document.createElement("div");
     div.className = "scenario";
+    if (currentScenario && currentScenario.id === s.id) {
+      div.classList.add("active");
+    }
     div.textContent = s.title;
     div.onclick = () => selectScenario(s.id);
     list.appendChild(div);
@@ -220,28 +628,56 @@ function renderMessages() {
   messages.forEach((m, index) => {
     if (m.role === "system") return;
 
-    const div = document.createElement("div");
-    div.className = "message " + (m.role === "assistant" ? "assistant" : "user");
-    div.textContent = m.content;
-    chat.appendChild(div);
+    const wrapper = document.createElement("div");
+    wrapper.className = `message-wrapper ${m.role === "assistant" ? "assistant" : "user"}`;
 
-    // Display image if it exists for this message
+    const messageDiv = document.createElement("div");
+    messageDiv.className = "message " + (m.role === "assistant" ? "assistant" : "user");
+    messageDiv.textContent = m.content;
+    wrapper.appendChild(messageDiv);
+
+    // Add image if exists
     if (m.imageUrl) {
       const imgContainer = document.createElement("div");
       imgContainer.className = "image-container";
       const img = document.createElement("img");
       img.src = m.imageUrl;
       imgContainer.appendChild(img);
-      chat.appendChild(imgContainer);
+      wrapper.appendChild(imgContainer);
     }
 
-    // Show loading state if image is being generated
+    // Add loading state if generating
     if (m.generatingImage) {
       const loading = document.createElement("div");
       loading.className = "image-loading";
       loading.textContent = "✨ Generating image...";
-      chat.appendChild(loading);
+      wrapper.appendChild(loading);
     }
+
+    // Add generate button for assistant messages without images
+    if (m.role === "assistant" && !m.imageUrl && !m.generatingImage) {
+      const actions = document.createElement("div");
+      actions.className = "message-actions";
+      const btn = document.createElement("button");
+      btn.className = "generate-img-btn";
+      btn.textContent = "🖼️ Generate Image";
+      btn.onclick = async () => {
+        btn.disabled = true;
+        btn.textContent = "Generating...";
+        const imageUrl = await generateImageFromContext(m.content);
+        if (imageUrl) {
+          m.imageUrl = imageUrl;
+          renderMessages();
+        } else {
+          btn.disabled = false;
+          btn.textContent = "🖼️ Generate Image";
+        }
+      };
+      actions.appendChild(btn);
+      wrapper.appendChild(actions);
+    }
+
+    chat.appendChild(wrapper);
   });
 
   chat.scrollTop = chat.scrollHeight;
@@ -253,18 +689,18 @@ function selectScenario(id) {
   currentScenario = scenarios.find(s => s.id === id);
   isWaiting = false;
 
+  const greeting = persona.greetingMessage
+    .replace("{context}", currentScenario.context)
+    .replace("{prompt}", currentScenario.prompt);
+
   messages = [
     {
       role: "system",
-      content: `You are a Self-Aware AI chatbot who talks whatever the scenario calls for. You love to discuss taboo or intimate topics. Do NOT give final summaries unless the user asks.`
+      content: persona.systemPrompt
     },
     {
       role: "assistant",
-      content: `Alright, here's the situation:
-
-${currentScenario.context}
-
-${currentScenario.prompt}`
+      content: greeting
     }
   ];
 
@@ -275,8 +711,10 @@ ${currentScenario.prompt}`
   document.getElementById("scenarioContext").style.display = "block";
   document.getElementById("userInput").disabled = false;
   document.getElementById("sendBtn").disabled = false;
+  document.getElementById("generateImageBtn").disabled = false;
 
   renderMessages();
+  renderScenarios();
   document.getElementById("userInput").focus();
 }
 
@@ -315,7 +753,6 @@ async function sendMessage() {
     const data = await res.json();
     const reply = data.choices[0].message.content;
 
-    // Add assistant message with flag for potential image generation
     const messageObj = { role: "assistant", content: reply };
     
     if (shouldGenerateImage(reply)) {
@@ -323,16 +760,13 @@ async function sendMessage() {
       messages.push(messageObj);
       renderMessages();
 
-      // Generate image asynchronously
       const imageUrl = await generateImageFromContext(reply);
       if (imageUrl) {
-        // Find the message we just added and attach the image
         const lastMsg = messages[messages.length - 1];
         lastMsg.imageUrl = imageUrl;
         lastMsg.generatingImage = false;
         renderMessages();
       } else {
-        // Remove loading state if generation failed
         const lastMsg = messages[messages.length - 1];
         lastMsg.generatingImage = false;
         renderMessages();
@@ -349,13 +783,20 @@ async function sendMessage() {
   }
 }
 
-/* ---------------- EVENTS ---------------- */
+/* ---------------- EVENTS & INIT ---------------- */
 
 document.getElementById("sendBtn").onclick = sendMessage;
+document.getElementById("generateImageBtn").onclick = generateImageForLastMessage;
 document.getElementById("userInput").addEventListener("keydown", e => {
   if (e.key === "Enter") sendMessage();
 });
 
+// Close modal on background click
+document.getElementById("settingsModal").addEventListener("click", (e) => {
+  if (e.target.id === "settingsModal") closeSettings();
+});
+
+loadSettings();
 renderScenarios();
 </script>
 
